@@ -1,3 +1,7 @@
+from data import BotData
+data = BotData()
+scores = data.get("scores")
+
 import os, sys
 token = os.environ["TOKEN_FIOI"].rstrip('\n')
 
@@ -5,15 +9,22 @@ import discord
 
 bot = discord.Bot()
 guild_fioi_id = 696724725279359097
-sc = bot.slash_command(guild_ids=[guild_fioi_id])
+def fioi_slash(**kwargs):
+    return bot.slash_command(guild_ids=[guild_fioi_id], **kwargs)
 guild_fioi = None
 role_debrief = None
+role_ranking = None
+salon_classement = None
 @bot.event
 async def on_ready():
-    global guild_fioi, role_debrief
+    global guild_fioi, role_debrief, role_ranking, salon_classement
     print(f"We have logged in as {bot.user}")
     guild_fioi = await bot.fetch_guild(guild_fioi_id)
     role_debrief = guild_fioi.get_role(1017111368547176449)
+    role_ranking = guild_fioi.get_role(1063951772332339271)
+    salon_classement = await guild_fioi.fetch_channel(1063952121180979311)
+    assert(salon_classement != None)
+    await update_liverank()
 
 
 class Confirm(discord.ui.View):
@@ -40,7 +51,7 @@ class Confirm(discord.ui.View):
         self.stop()
 
 
-@sc
+@fioi_slash(description="J'ai fini l'épreuve")
 async def debrief(ctx : discord.ApplicationContext):
     if role_debrief in ctx.author.roles:
         await ctx.respond(f"Vous avez déjà le rôle {role_debrief.name}")
@@ -56,4 +67,57 @@ async def debrief(ctx : discord.ApplicationContext):
     else:
         await ctx.edit(content="Vous avez annulé la commande. Ce bot n'est pas un jouet, merci de l'utiliser sérieusement.", view=None)
 
-bot.run(token)
+from enum import Enum
+
+@fioi_slash(description="Publier votre score")
+async def liverank(ctx : discord.ApplicationContext,
+    score : discord.Option(str, "scores séparés par des + (exemple 100+100+50+100+40+10)")):
+    if not role_debrief in ctx.author.roles:
+        await ctx.respond(f"Vous devez avoir le rôle {role_debrief.name} pour déclarer votre score.")
+        return
+    sl = []
+    try:
+        sl = score.replace(" ", "").split("+")
+        sl = list(map(int, sl))
+        assert(len(sl) == 6)
+        for x in sl:
+            assert (0 <= x and x <= 100)
+    except:
+        await ctx.respond(f"Vous n'avez pas respecté le format attendu (votre entrée : {score})", ephemeral=True)
+        return
+    scores[str(ctx.author.id)] = sl
+    await ctx.respond("Merci d'avoir publié votre score !")
+    await update_liverank()
+    await ctx.author.add_roles(role_ranking)
+
+async def update_liverank():
+    content = ""
+    sorted_scores = sorted(list(scores.items()), key = lambda x : -sum(x[1]))
+    for i, [user_id, sl] in enumerate(sorted_scores, 1):
+        user = await guild_fioi.fetch_member(user_id)
+        assert(user != None)
+        sl_str = "+".join(map(str, sl))
+        content += f"**{i}. {user.mention} : {sum(sl)}** ({sl_str})\n"
+    if not content:
+        content = "Vide"
+    ####
+    message = None
+    async for msg in salon_classement.history(limit=100):
+        if msg.author == bot.user:
+            message = msg
+            break
+    if message:
+        await message.edit(content=content)
+    else:
+        await salon_classement.send(content)
+
+@fioi_slash()
+async def debug(ctx):
+    await update_liverank()
+
+try:
+    bot.run(token)
+except:
+    bot.close()
+
+data.save()
