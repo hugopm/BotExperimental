@@ -4,6 +4,7 @@ data = BotData()
 import os, sys
 token = os.environ["TOKEN_FIOI"].rstrip('\n')
 
+from collections import defaultdict
 import discord
 
 bot = discord.Bot()
@@ -66,28 +67,39 @@ async def debrief(ctx : discord.ApplicationContext):
     else:
         await ctx.edit(content="Vous avez annulé la commande. Ce bot n'est pas un jouet, merci de l'utiliser sérieusement.", view=None)
 
-from enum import Enum
+class LiverankModal(discord.ui.Modal):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(title = "Score détaillé (A+B+C+D+E+F)", *args, **kwargs)
+        it = discord.ui.InputText(label="Scores")
+        it.placeholder = "Exemple : 100+80+50+70+100+20"
+        self.add_item(it)
+
+    async def callback(self, interaction: discord.Interaction):
+        score = self.children[0].value
+        sl = []
+        try:
+            sl = score.replace(" ", "").split("+")
+            sl = list(map(int, sl))
+            assert(len(sl) == 6)
+            for x in sl:
+                assert (0 <= x and x <= 100)
+        except:
+            await interaction.response.send_message(f"Vous n'avez pas respecté le format attendu (votre entrée : {score}). Exemple d'entrée correcte : 100+80+50+70+100+20.", ephemeral=True)
+            return
+        data.set_one(interaction.user.id, sl)
+        await interaction.response.send_message("Merci d'avoir publié votre score ! Vous avez débloqué le salon #classement.")
+        await update_liverank()
+        await interaction.user.add_roles(role_ranking)
+        self.stop()
 
 @fioi_slash(description="Publier votre score")
-async def liverank(ctx : discord.ApplicationContext,
-    score : discord.Option(str, "scores séparés par des + (exemple 100+100+50+100+40+10)")):
+async def liverank(ctx : discord.ApplicationContext):
     if not role_debrief in ctx.author.roles:
         await ctx.respond(f"Vous devez avoir le rôle {role_debrief.name} pour déclarer votre score.", ephemeral=True)
         return
-    sl = []
-    try:
-        sl = score.replace(" ", "").split("+")
-        sl = list(map(int, sl))
-        assert(len(sl) == 6)
-        for x in sl:
-            assert (0 <= x and x <= 100)
-    except:
-        await ctx.respond(f"Vous n'avez pas respecté le format attendu (votre entrée : {score})", ephemeral=True)
-        return
-    data.set_one(ctx.author.id, sl)
-    await ctx.respond("Merci d'avoir publié votre score ! Vous avez débloqué le salon #classement", ephemeral=True)
-    await update_liverank()
-    await ctx.author.add_roles(role_ranking)
+    modal = LiverankModal(timeout = 10)
+    await ctx.send_modal(modal)
+    await modal.wait()
 
 async def update_liverank():
     content = ""
@@ -111,10 +123,32 @@ async def update_liverank():
         await salon_classement.send(content)
 
 @fioi_slash(description="Pour Hugo")
-async def debug(ctx):
+async def debug(ctx : discord.ApplicationContext):
     isOk = await bot.is_owner(ctx.author)
     if isOk:
         await update_liverank()
     await ctx.respond("Ok" if isOk else "Interdit", ephemeral=True)
+
+@fioi_slash(description="Statistiques de l'épreuve")
+async def stats(ctx : discord.ApplicationContext):
+    if ctx.channel.id != 1017111913387282523:
+        await ctx.respond("Cette commande doit être lancée dans #debrief-epreuve", ephemeral=True)
+        return
+    scores = list(map(lambda x: x[1], data.scan()))
+    nb_cont = len(scores)
+    inv = [defaultdict(lambda: 0) for _ in range(data.NB_PROBLEMS)]
+    moyenne = [0.0 for _ in range(data.NB_PROBLEMS)]
+    for sl in scores:
+        for i in range(data.NB_PROBLEMS):
+            inv[i][sl[i]] += 1
+            moyenne[i] += sl[i] / nb_cont
+    content = f"Sur la base des {nb_cont} participants ayant déclaré leur score avec /liverank\n"
+    for i in range(data.NB_PROBLEMS):
+        info = sorted(inv[i].items(), reverse=True)
+        info = list(map(lambda x: f"{x[0]}% (x{x[1]})", info))
+        info = " / ".join(info)
+        content += f"p{i+1} (moyenne {round(moyenne[i])}%): " + info + "\n"
+    
+    await ctx.respond(content)
 
 bot.run(token)

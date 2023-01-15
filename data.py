@@ -1,6 +1,7 @@
 import boto3, json, os
 
 class BotData:
+    NB_PROBLEMS = 6
     def __init__(self):
         self.dynamodb = boto3.resource('dynamodb',
             aws_access_key_id = os.environ["AWS_ID"],
@@ -20,6 +21,9 @@ class BotData:
         self.table.put_item(
             Item = {'id': id, 'liste': sl}
         )
+
+    def delete(self, id):
+        self.table.delete_item(Key = {'id': id})
 
     def scan(self):
         resp = self.table.scan()['Items']
