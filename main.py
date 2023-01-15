@@ -72,7 +72,7 @@ from enum import Enum
 async def liverank(ctx : discord.ApplicationContext,
     score : discord.Option(str, "scores séparés par des + (exemple 100+100+50+100+40+10)")):
     if not role_debrief in ctx.author.roles:
-        await ctx.respond(f"Vous devez avoir le rôle {role_debrief.name} pour déclarer votre score.")
+        await ctx.respond(f"Vous devez avoir le rôle {role_debrief.name} pour déclarer votre score.", ephemeral=True)
         return
     sl = []
     try:
@@ -85,7 +85,7 @@ async def liverank(ctx : discord.ApplicationContext,
         await ctx.respond(f"Vous n'avez pas respecté le format attendu (votre entrée : {score})", ephemeral=True)
         return
     data.set_one(ctx.author.id, sl)
-    await ctx.respond("Merci d'avoir publié votre score !")
+    await ctx.respond("Merci d'avoir publié votre score ! Vous avez débloqué le salon #classement", ephemeral=True)
     await update_liverank()
     await ctx.author.add_roles(role_ranking)
 
@@ -96,7 +96,7 @@ async def update_liverank():
         user = await guild_fioi.fetch_member(user_id)
         assert(user != None)
         sl_str = "+".join(map(str, sl))
-        content += f"**{i}. {user.mention} : {sum(sl)}** ({sl_str})\n"
+        content += f"**{i}. {user.nick} : {sum(sl)}** ({sl_str})\n"
     if not content:
         content = "Vide"
     ####
