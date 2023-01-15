@@ -103,6 +103,9 @@ async def liverank(ctx : discord.ApplicationContext):
     await ctx.send_modal(modal)
     await modal.wait()
 
+def get_nick(user):
+    return user.nick if user.nick else user.name
+
 async def update_liverank():
     content = ""
     sorted_scores = sorted(data.scan(), key = lambda x : -sum(x[1]))
@@ -114,7 +117,7 @@ async def update_liverank():
         user = await guild_fioi.fetch_member(user_id)
         assert(user != None)
         sl_str = "+".join(map(str, sl))
-        content += f"**{idClass}. {user.nick} : {sum(sl)}** ({sl_str})\n"
+        content += f"**{idClass}. {get_nick(user)} : {sum(sl)}** ({sl_str})\n"
     if not content:
         content = "Vide"
     ####
