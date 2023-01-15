@@ -14,14 +14,16 @@ def fioi_slash(**kwargs):
 guild_fioi = None
 role_debrief = None
 role_ranking = None
+role_participant = None
 salon_classement = None
 @bot.event
 async def on_ready():
-    global guild_fioi, role_debrief, role_ranking, salon_classement
+    global guild_fioi, role_debrief, role_ranking, role_participant, salon_classement
     print(f"We have logged in as {bot.user}")
     guild_fioi = await bot.fetch_guild(guild_fioi_id)
     role_debrief = guild_fioi.get_role(1017111368547176449)
     role_ranking = guild_fioi.get_role(1063951772332339271)
+    role_participant = guild_fioi.get_role(1064202998194126979)
     salon_classement = await guild_fioi.fetch_channel(1063952121180979311)
     assert(salon_classement != None)
     await update_liverank()
@@ -63,7 +65,7 @@ async def debrief(ctx : discord.ApplicationContext):
         await ctx.edit(content="Timeout", view=None)
     elif view.value:
         await ctx.edit(content=f"Vous avez obtenu le rôle {role_debrief.name} !", view=None)
-        await ctx.author.add_roles(role_debrief)
+        await ctx.author.add_roles(role_debrief, role_participant)
     else:
         await ctx.edit(content="Vous avez annulé la commande. Ce bot n'est pas un jouet, merci de l'utiliser sérieusement.", view=None)
 
