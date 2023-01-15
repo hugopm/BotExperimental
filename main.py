@@ -106,11 +106,15 @@ async def liverank(ctx : discord.ApplicationContext):
 async def update_liverank():
     content = ""
     sorted_scores = sorted(data.scan(), key = lambda x : -sum(x[1]))
-    for i, [user_id, sl] in enumerate(sorted_scores, 1):
+    idClass, lastSum = 0, -1
+    for rawId, [user_id, sl] in enumerate(sorted_scores, 1):
+        if sum(sl) != lastSum:
+            idClass = rawId
+        lastSum = sum(sl)
         user = await guild_fioi.fetch_member(user_id)
         assert(user != None)
         sl_str = "+".join(map(str, sl))
-        content += f"**{i}. {user.nick} : {sum(sl)}** ({sl_str})\n"
+        content += f"**{idClass}. {user.nick} : {sum(sl)}** ({sl_str})\n"
     if not content:
         content = "Vide"
     ####
