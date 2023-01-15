@@ -2,29 +2,26 @@ import boto3, json, os
 
 class BotData:
     def __init__(self):
-        self.s3 = boto3.client(
-            's3',
+        self.dynamodb = boto3.resource('dynamodb',
             aws_access_key_id = os.environ["AWS_ID"],
-            aws_secret_access_key = os.environ["AWS_PASS"])
-        s3obj = self.s3.get_object(Bucket='botfrioi', Key='conf.json')["Body"]
-        self.data = json.load(s3obj)
-        print(self.data)
-    def get(self, key):
-        if not key in self.data.keys():
-            self.data[key] = {}
-        return self.data[key]
-    def save(self):
-        print("Saving..")
-        print(self.data)
-        self.s3.put_object(Bucket='botfrioi', Key='conf.json', Body=json.dumps(self.data))
+            aws_secret_access_key = os.environ["AWS_PASS"],
+            region_name='eu-west-3')
+        self.table = self.dynamodb.Table('bot-scores')
+    def get_one(self, id):
+        resp = self.table.get_item(
+            Key = {'id': id}
+        )
+        item = resp['Item']
+        sl = item['liste']
+        return list(map(int, sl))
+    
+    def set_one(self, id, sl):
+        print(f"Setting {id}")
+        self.table.put_item(
+            Item = {'id': id, 'liste': sl}
+        )
 
-if __name__ == "__main__":
-
-    bd = BotData()
-    sco = bd.get("scores")
-    sco["hugopm"] = [40]*6
-    sco["simon"] = [100]*6
-    l = list(sco.items())
-    l.sort(key = lambda x: -sum(x[1]))
-    print(l)
-    bd.save()
+    def scan(self):
+        resp = self.table.scan()['Items']
+        print(f"Scanned {len(resp)} items")
+        return [[int(x['id']), list(map(int, x['liste']))] for x in resp]

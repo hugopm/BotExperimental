@@ -1,6 +1,5 @@
 from data import BotData
 data = BotData()
-scores = data.get("scores")
 
 import os, sys
 token = os.environ["TOKEN_FIOI"].rstrip('\n')
@@ -85,14 +84,14 @@ async def liverank(ctx : discord.ApplicationContext,
     except:
         await ctx.respond(f"Vous n'avez pas respecté le format attendu (votre entrée : {score})", ephemeral=True)
         return
-    scores[str(ctx.author.id)] = sl
+    data.set_one(ctx.author.id, sl)
     await ctx.respond("Merci d'avoir publié votre score !")
     await update_liverank()
     await ctx.author.add_roles(role_ranking)
 
 async def update_liverank():
     content = ""
-    sorted_scores = sorted(list(scores.items()), key = lambda x : -sum(x[1]))
+    sorted_scores = sorted(data.scan(), key = lambda x : -sum(x[1]))
     for i, [user_id, sl] in enumerate(sorted_scores, 1):
         user = await guild_fioi.fetch_member(user_id)
         assert(user != None)
@@ -111,13 +110,11 @@ async def update_liverank():
     else:
         await salon_classement.send(content)
 
-@fioi_slash()
+@fioi_slash(description="Pour Hugo")
 async def debug(ctx):
-    await update_liverank()
+    isOk = await bot.is_owner(ctx.author)
+    if isOk:
+        await update_liverank()
+    await ctx.respond("Ok" if isOk else "Interdit", ephemeral=True)
 
-try:
-    bot.run(token)
-except:
-    bot.close()
-
-data.save()
+bot.run(token)
