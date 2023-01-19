@@ -1,5 +1,5 @@
 from data import ContestData
-data = None
+contest_data = None
 contest = None
 import os, sys
 token = os.environ["TOKEN_FIOI"].rstrip('\n')
@@ -27,6 +27,13 @@ async def on_ready():
     salon_classement = await guild_fioi.fetch_channel(1063952121180979311)
     assert(salon_classement != None)
     await update_liverank()
+
+def get_nick(user : discord.Member):
+    return user.nick if user.nick else user.name
+
+async def fetch_nick(uid : int):
+    user = await guild_fioi.fetch_member(uid)
+    return get_nick(user)
 
 
 class Confirm(discord.ui.View):
@@ -88,7 +95,7 @@ class LiverankModal(discord.ui.Modal):
         except:
             await interaction.response.send_message(f"Vous n'avez pas respecté le format attendu (votre entrée : {score}). Exemple d'entrée correcte : 100+80+50+70+100+20.", ephemeral=True)
             return
-        await data.set_scores(interaction.user.id, sl)
+        await contest_data.set_scores(interaction.user.id, sl)
         await interaction.response.send_message("Merci d'avoir publié votre score ! Vous avez débloqué le salon #classement.")
         await update_liverank()
         await interaction.user.add_roles(role_ranking)
@@ -103,21 +110,19 @@ async def liverank(ctx : discord.ApplicationContext):
     await ctx.send_modal(modal)
     await modal.wait()
 
-def get_nick(user):
-    return user.nick if user.nick else user.name
-
 async def update_liverank():
     content = ""
-    sorted_scores = sorted(await data.get_all(), key = lambda x : -sum(x[1]))
+    sorted_scores = sorted(await contest_data.get_all(), key = lambda x : -sum(x[1]))
+    uid_list = list(map(lambda x: x[0], sorted_scores))
+    rank_nicks = await contest_data.uid_to_nick(uid_list, fetch_nick)
     idClass, lastSum = 0, -1
     for rawId, [user_id, sl] in enumerate(sorted_scores, 1):
-        if sum(sl) != lastSum:
+        if sum(sl) != lastSum: # Scores égaux ?
             idClass = rawId
         lastSum = sum(sl)
-        user = await guild_fioi.fetch_member(user_id)
-        assert(user != None)
+        nick = rank_nicks[rawId - 1] # 0-id vs 1-id
         sl_str = "+".join(map(str, sl))
-        content += f"**{idClass}. {get_nick(user)} : {sum(sl)}** ({sl_str})\n"
+        content += f"**{idClass}. {nick} : {sum(sl)}** ({sl_str})\n"
     if not content:
         content = "Vide"
     ####
@@ -136,29 +141,29 @@ async def debug(ctx : discord.ApplicationContext):
     if not (await bot.is_owner(ctx.author)):
         await ctx.respond("Interdit", ephemeral=True)
         return
-    await ctx.respond("Patientez..", ephemeral=True)
     await update_liverank()
-    await ctx.edit(content="Terminé")
+    await ctx.respond("Terminé", ephemeral=True)
+
 
 @fioi_slash(description="Statistiques de l'épreuve")
 async def stats(ctx : discord.ApplicationContext):
     if ctx.channel.id != 1017111913387282523:
         await ctx.respond("Cette commande doit être lancée dans #debrief-epreuve", ephemeral=True)
         return
-    scores = list(map(lambda x: x[1], await data.get_all()))
+    scores = list(map(lambda x: x[1], await contest_data.get_all()))
     nb_cont = len(scores)
-    inv = [defaultdict(lambda: 0) for _ in range(data.nb_problems)]
-    moyenne = [0.0 for _ in range(data.nb_problems)]
+    inv = [defaultdict(lambda: 0) for _ in range(contest_data.nb_problems)]
+    moyenne = [0.0 for _ in range(contest_data.nb_problems)]
     for sl in scores:
-        for i in range(data.nb_problems):
+        for i in range(contest_data.nb_problems):
             inv[i][sl[i]] += 1
             moyenne[i] += sl[i] / nb_cont
     content = f"Sur la base des {nb_cont} participants ayant déclaré leur score avec /liverank\n"
-    for i in range(data.nb_problems):
+    for i in range(contest_data.nb_problems):
         info = sorted(inv[i].items(), reverse=True)
         info = list(map(lambda x: f"{x[0]}% (x{x[1]})", info))
         info = " / ".join(info)
-        content += f"**{i+1}. {data.get_name(i)}** (moyenne {round(moyenne[i])}%)\n" + info + "\n"
+        content += f"**{i+1}. {contest_data.get_name(i)}** (moyenne {round(moyenne[i])}%)\n" + info + "\n"
     
     await ctx.respond(content)
 
@@ -168,17 +173,16 @@ async def delete(ctx : discord.ApplicationContext,
     if not (await bot.is_owner(ctx.author)):
         await ctx.respond("Interdit", ephemeral=True)
         return
-    await ctx.respond("Patientez..",ephemeral=True)
-    if await data.delete(user.id):
+    if await contest_data.delete(user.id):
+        await ctx.respond(f"{get_nick(user)} a été retiré du classement")
         await update_liverank()
-        await ctx.edit(content=f"{get_nick(user)} a été retiré du classement")
     else:
-        await ctx.edit(content=f"{get_nick(user)} n'était pas dans le classement")
+        await ctx.respond(f"{get_nick(user)} n'était pas dans le classement")
 
 import asyncio
 
 loop = asyncio.get_event_loop()
-data = loop.run_until_complete(ContestData.factory('63c85b171a1acdf599136017'))
+contest_data = loop.run_until_complete(ContestData.factory('63c85b171a1acdf599136017'))
 
 try:
     loop.run_until_complete(bot.start(token))

@@ -1,4 +1,3 @@
-import asyncio
 import motor.motor_asyncio
 import os
 import bson
@@ -52,3 +51,21 @@ class ContestData:
         cursor = self.db.results.find({"contest": self.con_obj_id})
         results = [[x["user"], x["scores"]] async for x in cursor]
         return results
+
+    async def uid_to_nick(self, uid_list : list[int], fallback):
+        cursor = self.db.users.find({'uid': {"$in": uid_list}})
+        cache = {}
+        async for item in cursor:
+            if "nick" in item.keys():
+                cache[item["uid"]] = item["nick"]
+        result = []
+        for uid in uid_list:
+            if not uid in cache:
+                cache[uid] = await fallback(uid)
+                await self.db.users.update_one(
+                    {'uid': uid},
+                    {'$set': {'nick': cache[uid]}},
+                    upsert = True
+                )
+            result.append(cache[uid])
+        return result
