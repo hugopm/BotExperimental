@@ -59,7 +59,7 @@ async def debrief(ctx : discord.ApplicationContext):
         await ctx.respond(f"Vous avez déjà le rôle {role_debrief.name}")
         return
     view = Confirm(ctx.author)
-    await ctx.respond(f"{ctx.author.mention}, avez vous bien fini l'épreuve de sélection 1 ? Tout abus pourra entraîner une disqualification.", view=view)
+    await ctx.respond(f"{ctx.author.mention}, avez vous bien fini les **deux** épreuves de sélection (1 et 2) ? Tout abus pourra entraîner une disqualification.", view=view)
     await view.wait()
     if view.value is None:
         await ctx.edit(content="Timeout", view=None)
@@ -71,9 +71,9 @@ async def debrief(ctx : discord.ApplicationContext):
 
 class LiverankModal(discord.ui.Modal):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(title = "Score détaillé (A+B+C+D+E+F)", *args, **kwargs)
+        super().__init__(title = "Score détaillé (A+B+C+D+E)", *args, **kwargs)
         it = discord.ui.InputText(label="Scores")
-        it.placeholder = "Exemple : 100+80+50+70+100+20"
+        it.placeholder = "Exemple : 100+80+50+70+100"
         self.add_item(it)
 
     async def callback(self, interaction: discord.Interaction):
@@ -82,11 +82,11 @@ class LiverankModal(discord.ui.Modal):
         try:
             sl = score.replace(" ", "").split("+")
             sl = list(map(int, sl))
-            assert(len(sl) == 6)
+            assert(len(sl) == data.NB_PROBLEMS)
             for x in sl:
                 assert (0 <= x and x <= 100)
         except:
-            await interaction.response.send_message(f"Vous n'avez pas respecté le format attendu (votre entrée : {score}). Exemple d'entrée correcte : 100+80+50+70+100+20.", ephemeral=True)
+            await interaction.response.send_message(f"Vous n'avez pas respecté le format attendu (votre entrée : {score}). Exemple d'entrée correcte : 100+80+50+70+100", ephemeral=True)
             return
         data.set_one(interaction.user.id, sl)
         await interaction.response.send_message("Merci d'avoir publié votre score ! Vous avez débloqué le salon #classement.")
