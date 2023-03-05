@@ -6,7 +6,7 @@ token = os.environ["TOKEN_FIOI"].rstrip('\n')
 
 from collections import defaultdict
 import discord
-
+# intents=discord.Intents(members=True)
 bot = discord.Bot()
 guild_fioi_id = 696724725279359097
 def fioi_slash(**kwargs):
@@ -26,6 +26,9 @@ async def on_ready():
     role_participant = guild_fioi.get_role(1064202998194126979)
     salon_classement = await guild_fioi.fetch_channel(1063952121180979311)
     assert(salon_classement != None)
+    # async for m in guild_fioi.fetch_members():
+    #     if role_debrief in m.roles:
+    #         await m.remove_roles(role_ranking, role_debrief)
     await update_liverank()
 
 
@@ -59,7 +62,7 @@ async def debrief(ctx : discord.ApplicationContext):
         await ctx.respond(f"Vous avez déjà le rôle {role_debrief.name}")
         return
     view = Confirm(ctx.author)
-    await ctx.respond(f"{ctx.author.mention}, avez vous bien fini les **deux** épreuves de sélection (1 et 2) ? Tout abus pourra entraîner une disqualification.", view=view)
+    await ctx.respond(f"{ctx.author.mention}, avez vous bien fini **le FARIO** (et toutes les épreuves de sélection précédentes) ? Tout abus pourra entraîner une disqualification.", view=view)
     await view.wait()
     if view.value is None:
         await ctx.edit(content="Timeout", view=None)
@@ -71,9 +74,9 @@ async def debrief(ctx : discord.ApplicationContext):
 
 class LiverankModal(discord.ui.Modal):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(title = "Score détaillé (A+B+C+D+E)", *args, **kwargs)
+        super().__init__(title = "Score détaillé (A+B+C)", *args, **kwargs)
         it = discord.ui.InputText(label="Scores")
-        it.placeholder = "Exemple : 100+80+50+70+100"
+        it.placeholder = "Exemple : 100+80+50"
         self.add_item(it)
 
     async def callback(self, interaction: discord.Interaction):
