@@ -62,7 +62,7 @@ async def debrief(ctx : discord.ApplicationContext):
         await ctx.respond(f"Vous avez déjà le rôle {role_debrief.name}")
         return
     view = Confirm(ctx.author)
-    await ctx.respond(f"{ctx.author.mention}, avez vous bien fini **le FARIO** (et toutes les épreuves de sélection précédentes) ? Tout abus pourra entraîner une disqualification.", view=view)
+    await ctx.respond(f"{ctx.author.mention}, avez vous bien fini **l'épreuve 3** , le FARIO et toutes les épreuves de sélection précédentes ? Tout abus pourra entraîner une disqualification.", view=view)
     await view.wait()
     if view.value is None:
         await ctx.edit(content="Timeout", view=None)
@@ -74,9 +74,9 @@ async def debrief(ctx : discord.ApplicationContext):
 
 class LiverankModal(discord.ui.Modal):
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(title = "Score détaillé (A+B+C)", *args, **kwargs)
+        super().__init__(title = "Score détaillé (A+B+C+D+E)", *args, **kwargs)
         it = discord.ui.InputText(label="Scores")
-        it.placeholder = "Exemple : 100+80+50"
+        it.placeholder = "Exemple : 100+80+50+75+40"
         self.add_item(it)
 
     async def callback(self, interaction: discord.Interaction):

@@ -1,7 +1,7 @@
 import boto3, json, os
 
 class BotData:
-    NB_PROBLEMS = 3
+    NB_PROBLEMS = 5
     def __init__(self):
         self.dynamodb = boto3.resource('dynamodb',
             aws_access_key_id = os.environ["AWS_ID"],
