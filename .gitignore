@@ -1,0 +1,31 @@
+# Project specific
+pwmaker.py
+bot_scores.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.env
+.venv
+env/
+venv/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Database
+*.db
+*.sqlite3
