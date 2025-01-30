@@ -1,5 +1,6 @@
 # Project specific
 pwmaker.py
+srv.py
 bot_scores.db
 
 # Python
