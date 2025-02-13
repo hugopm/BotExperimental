@@ -135,15 +135,15 @@ async def debug(ctx : ApplicationContext):
         await bot.ranking.update()
     await ctx.respond("Ok" if isOk else "Interdit", ephemeral=True)
 
-@slash("Supprimer tous les scores")
-async def clear_ranking(ctx: ApplicationContext):
+@slash("Supprimer les scores et les rôles")
+async def clear(ctx: ApplicationContext):
     if not await bot.is_owner(ctx.author):
         await ctx.respond("Interdit.", ephemeral=True)
         return
         
     view = ConfirmView(ctx.author)
     await ctx.respond(
-        "⚠️ Êtes-vous sûr de vouloir supprimer **tous** les scores ?",
+        "⚠️ Êtes-vous sûr de vouloir enlever les rôles debrief/classement et supprimer **tous** les scores ?",
         view=view,
         ephemeral=True
     )
@@ -152,9 +152,14 @@ async def clear_ranking(ctx: ApplicationContext):
     if view.value is None:
         await ctx.edit(content="Timeout", view=None)
     elif view.value:
+        await ctx.edit(content="En cours..", view=None)
         bot.data.delete_all()
         await bot.ranking.update()
-        await ctx.edit(content="Tous les scores ont été supprimés.", view=None)
+        async for m in bot.guild_fioi.fetch_members():
+            if bot.role_debrief in m.roles:
+                print(m.name)
+                await m.remove_roles(bot.role_ranking, bot.role_debrief)
+        await ctx.edit(content="Done. Ne pas oublier la config.", view=None)
     else:
         await ctx.edit(content="Opération annulée.", view=None)
 
