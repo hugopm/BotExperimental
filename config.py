@@ -18,7 +18,7 @@ class Contest:
     EXEMPLE = "42+50+10+80"
     NOM_EPREUVE = "épreuve 3"
     MESSAGE = (
-        "{user_mention}, **avez vous bien fini les trois épreuves (ouvertes le 30 janvier, 13 février et le 26 février) ?** "
+        "{user_mention}, **avez vous bien fini les trois épreuves (ouvertes le 30 janvier, le 13 février et le 26 février) ?** "
         "Tout abus pourra entraîner une disqualification."
     )
 
