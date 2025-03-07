@@ -51,6 +51,10 @@ def slash(desc):
 
 @slash("J'ai fini l'épreuve")
 async def debrief(ctx: ApplicationContext):
+    if cfg.lock_msg:
+        await ctx.respond(cfg.lock_msg, ephemeral=True)
+        return
+
     if bot.role_debrief in ctx.author.roles:
         await ctx.respond(f"Vous avez déjà le rôle {bot.role_debrief.name}")
         return

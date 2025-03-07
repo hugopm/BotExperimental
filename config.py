@@ -13,12 +13,12 @@ class Roles:
 
 @dataclass
 class Contest:
-    NB_PROBLEMS = 4
-    ABC = "A+B+C+D"
-    EXEMPLE = "42+50+10+80"
-    NOM_EPREUVE = "épreuve 3"
+    NB_PROBLEMS = 3
+    ABC = "A+B+C"
+    EXEMPLE = "42+50+10"
+    NOM_EPREUVE = "FARIO"
     MESSAGE = (
-        "{user_mention}, **avez vous bien fini les trois épreuves (ouvertes le 30 janvier, le 13 février et le 26 février) ?** "
+        "{user_mention}, avez vous bien fini toutes les épreuves (ouvertes le 30 janvier, le 13 février et le 26 février) ainsi que le FARIO (le 9 mars) ? "
         "Tout abus pourra entraîner une disqualification."
     )
 
@@ -28,3 +28,4 @@ class cfg:
     channels = Channels()
     roles = Roles()
     contest = Contest()
+    lock_msg = "Toute discussion sur les problèmes du FARIO est interdite (même en MP) pour le moment."
