@@ -14,7 +14,7 @@ class Roles:
 @dataclass
 class Contest:
     NB_PROBLEMS = 3
-    ABC = "A+B+C"
+    ABC = "arrayser+flooding+treedash"
     EXEMPLE = "42+50+10"
     NOM_EPREUVE = "FARIO"
     MESSAGE = (
@@ -28,4 +28,4 @@ class cfg:
     channels = Channels()
     roles = Roles()
     contest = Contest()
-    lock_msg = "Toute discussion sur les problèmes du FARIO est interdite (même en MP) pour le moment."
+    lock_msg = None
