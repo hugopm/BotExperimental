@@ -30,6 +30,7 @@ class FioiBot(discord.Bot):
         self.role_debrief = self.guild_fioi.get_role(cfg.roles.DEBRIEF)
         self.role_ranking = self.guild_fioi.get_role(cfg.roles.RANKING)
         self.role_participant = self.guild_fioi.get_role(cfg.roles.PARTICIPANT)
+        self.role_finale = self.guild_fioi.get_role(cfg.roles.FINALE)
 
     async def _setup_channels(self):
         self.salon_classement = await self.guild_fioi.fetch_channel(cfg.channels.RANKING)
@@ -103,6 +104,13 @@ async def password(ctx: ApplicationContext):
     if not PASSWORD_ENABLED:
         await ctx.respond(
             "Cette commande n'est pas disponible car la génération de mot de passe n'est pas activée.",
+            ephemeral=True
+        )
+        return
+    
+    if bot.role_finale not in ctx.author.roles:
+        await ctx.respond(
+            f"Vous devez avoir le rôle {bot.role_finale.name} pour obtenir votre mot de passe CMS.",
             ephemeral=True
         )
         return
