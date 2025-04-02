@@ -5,13 +5,14 @@ from ranking import Ranking
 from views import ConfirmView, ScoreModal
 from data import BotData
 from config import cfg
+from dotenv import load_dotenv
+load_dotenv()
 try:
     from pwmaker import getPw
     PASSWORD_ENABLED = True
 except ImportError:
     PASSWORD_ENABLED = False
 import re
-from dotenv import load_dotenv
 
 class FioiBot(discord.Bot):
     def __init__(self):
@@ -194,5 +195,4 @@ def _extract_id_from_name(display_name: str):
     return match.group(1) if match else None
 
 if __name__ == "__main__":
-    load_dotenv()
     bot.run(os.environ["TOKEN_FIOI"].rstrip('\n'))
