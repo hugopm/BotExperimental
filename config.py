@@ -15,11 +15,11 @@ class Roles:
 @dataclass
 class Contest:
     NB_PROBLEMS = 3
-    ABC = "arrayser+flooding+treedash"
-    EXEMPLE = "42+50+10"
-    NOM_EPREUVE = "FARIO"
+    ABC = "A+B+C+D"
+    EXEMPLE = "100+25+33+15"
+    NOM_EPREUVE = "épreuve 1"
     MESSAGE = (
-        "{user_mention}, avez vous bien fini toutes les épreuves (ouvertes le 30 janvier, le 13 février et le 26 février) ainsi que le FARIO (le 9 mars) ? "
+        "{user_mention}, avez vous bien fini la première épreuve de sélection pour le stage de la Toussaint ? "
         "Tout abus pourra entraîner une disqualification."
     )
 
