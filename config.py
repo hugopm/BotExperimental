@@ -14,7 +14,7 @@ class Roles:
 
 @dataclass
 class Contest:
-    NB_PROBLEMS = 3
+    NB_PROBLEMS = 4
     ABC = "A+B+C+D"
     EXEMPLE = "100+25+33+15"
     NOM_EPREUVE = "épreuve 1"
