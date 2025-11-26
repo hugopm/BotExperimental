@@ -17,9 +17,9 @@ class Contest:
     NB_PROBLEMS = 4
     ABC = "A+B+C+D"
     EXEMPLE = "100+25+33+15"
-    NOM_EPREUVE = "épreuve 3"
+    NOM_EPREUVE = "épreuve 1"
     MESSAGE = (
-        "{user_mention}, avez vous bien fini les **trois épreuves** de sélection (l'épreuve 1, l'épreuve 2 **et** l'épreuve 3) pour le stage de la Toussaint ? "
+        "{user_mention}, avez vous bien fini la première épreuve (ouverte le 26 novembre) ? "
         "Tout abus pourra entraîner une disqualification."
     )
 
