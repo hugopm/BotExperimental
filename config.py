@@ -1,32 +1,101 @@
-from dataclasses import dataclass
+import json
+import os
+import tempfile
+from pathlib import Path
+from threading import RLock
 
-@dataclass
-class Channels:
-    RANKING = 1063952121180979311
-    DEBRIEF = 1017111913387282523
+KEY_DESCRIPTIONS = {
+    "CHANNEL_DEBRIEF": "ID du salon Discord #debrief-epreuve",
+    "CHANNEL_RANKING": "ID du salon Discord #classement",
+    "MESSAGE_CONFIRMATION": "Message affiché dans la commande de débrief. {user_mention} est automatiquement remplacé.",
+    "NB_PROBLEMS": "Nombre de problèmes de l'épreuve.",
+    "NOM_EPREUVE": "L'en-tête du classement sera \"Classement {NOM_EPREUVE}\".",
+    "GUILD_ID": "ID du serveur Discord cible.",
+    "LOCK_MSG": "Si ce message n'est pas vide, le salon #debrief-epreuve sera bloqué et ce message s'affichera lors de la commande /debrief. Utile pour bloquer le salon au FARIO.",
+    "ROLE_DEBRIEF": "ID du rôle @debrief-epreuve.",
+    "ROLE_FINALE": "ID du rôle des finalistes.",
+    "ROLE_PARTICIPANT": "ID du rôle @participant-selection.",
+    "ROLE_RANKING": "ID du rôle @score-publié.",
+}
 
-@dataclass
-class Roles:
-    DEBRIEF = 1154058349529268255
-    RANKING = 1154058816636330024
-    PARTICIPANT = 1197122920032514088
-    FINALE = 1352376440078860368 # 2025
 
-@dataclass
-class Contest:
-    NB_PROBLEMS = 4
-    ABC = "A+B+C+D"
-    EXEMPLE = "100+25+33+15"
-    NOM_EPREUVE = "épreuve 3"
-    MESSAGE = (
-        "{user_mention}, avez vous bien fini l'épreuve 1 (ouverte le 21 janvier), l'épreuve 2 (ouverte le 4 février) **ET** l'épreuve 3 (ouverte le 25 février) ? "
-        "Tout abus pourra entraîner une disqualification."
-    )
+class ConfigStore:
+    def __init__(self, file_path: Path):
+        object.__setattr__(self, "_lock", RLock())
+        object.__setattr__(self, "_file_path", file_path)
+        object.__setattr__(self, "_data", self._load())
 
-@dataclass
-class cfg:
-    GUILD_ID = 696724725279359097
-    channels = Channels()
-    roles = Roles()
-    contest = Contest()
-    lock_msg = None
+    def _load(self) -> dict:
+        if not self._file_path.exists():
+            raise FileNotFoundError(f"Missing config file: {self._file_path}")
+        with self._file_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            raise ValueError(f"Invalid config format in {self._file_path}")
+        return data
+
+    def _atomic_write(self, data: dict):
+        self._file_path.parent.mkdir(parents=True, exist_ok=True)
+        serialized = json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True)
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=self._file_path.parent,
+            delete=False,
+        ) as tmp:
+            tmp.write(serialized)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+            tmp_path = Path(tmp.name)
+
+        os.replace(tmp_path, self._file_path)
+
+    def __getattr__(self, key: str):
+        with self._lock:
+            if key == "ABC":
+                nb = self._data["NB_PROBLEMS"]
+                if not isinstance(nb, int) or nb <= 0:
+                    raise ValueError("NB_PROBLEMS must be a positive integer.")
+                return "+".join(chr(ord("A") + i) for i in range(nb))
+            if key == "EXEMPLE":
+                nb = self._data["NB_PROBLEMS"]
+                if not isinstance(nb, int) or nb <= 0:
+                    raise ValueError("NB_PROBLEMS must be a positive integer.")
+                return "+".join(str(max(0, 100 - 10 * i)) for i in range(nb))
+            if key not in self._data:
+                raise AttributeError(f"Missing config key: {key}")
+            return self._data[key]
+
+    def __setattr__(self, key: str, value):
+        if key.startswith("_"):
+            object.__setattr__(self, key, value)
+            return
+        raise AttributeError("Config is read-only via attributes. Use save_all(dict).")
+
+    def as_dict(self) -> dict:
+        with self._lock:
+            return dict(self._data)
+
+    def descriptions(self) -> dict:
+        return dict(KEY_DESCRIPTIONS)
+
+    def save_all(self, data: dict):
+        if not isinstance(data, dict):
+            raise ValueError("Config payload must be a dict.")
+
+        expected = set(self._data.keys())
+        provided = set(data.keys())
+        missing = expected - provided
+        extra = provided - expected
+        if missing:
+            raise KeyError(f"Missing keys in payload: {sorted(missing)}")
+        if extra:
+            raise KeyError(f"Unknown keys in payload: {sorted(extra)}")
+
+        with self._lock:
+            self._data = dict(data)
+            self._atomic_write(self._data)
+
+
+cfg = ConfigStore(Path(__file__).with_name("config.json"))

@@ -1,10 +1,12 @@
 import os
+import threading
 import discord
 from discord import ApplicationContext
 from ranking import Ranking 
 from views import ConfirmView, ScoreModal
 from data import BotData
 from config import cfg
+from admin import app as admin_app
 from dotenv import load_dotenv
 load_dotenv()
 try:
@@ -29,13 +31,13 @@ class FioiBot(discord.Bot):
         await self._setup_channels()
 
     async def _setup_roles(self):
-        self.role_debrief = self.guild_fioi.get_role(cfg.roles.DEBRIEF)
-        self.role_ranking = self.guild_fioi.get_role(cfg.roles.RANKING)
-        self.role_participant = self.guild_fioi.get_role(cfg.roles.PARTICIPANT)
-        self.role_finale = self.guild_fioi.get_role(cfg.roles.FINALE)
+        self.role_debrief = self.guild_fioi.get_role(cfg.ROLE_DEBRIEF)
+        self.role_ranking = self.guild_fioi.get_role(cfg.ROLE_RANKING)
+        self.role_participant = self.guild_fioi.get_role(cfg.ROLE_PARTICIPANT)
+        self.role_finale = self.guild_fioi.get_role(cfg.ROLE_FINALE)
 
     async def _setup_channels(self):
-        self.salon_classement = await self.guild_fioi.fetch_channel(cfg.channels.RANKING)
+        self.salon_classement = await self.guild_fioi.fetch_channel(cfg.CHANNEL_RANKING)
         assert self.salon_classement is not None
 
     async def on_ready(self):
@@ -54,8 +56,8 @@ def slash(desc):
 
 @slash("J'ai fini l'épreuve")
 async def debrief(ctx: ApplicationContext):
-    if cfg.lock_msg:
-        await ctx.respond(cfg.lock_msg, ephemeral=True)
+    if cfg.LOCK_MSG:
+        await ctx.respond(cfg.LOCK_MSG, ephemeral=True)
         return
 
     if bot.role_debrief in ctx.author.roles:
@@ -64,7 +66,7 @@ async def debrief(ctx: ApplicationContext):
 
     view = ConfirmView(ctx.author)
     await ctx.respond(
-        cfg.contest.MESSAGE.format(user_mention=ctx.author.mention),
+        cfg.MESSAGE_CONFIRMATION.format(user_mention=ctx.author.mention),
         view=view
     )
     
@@ -92,7 +94,7 @@ async def liverank(ctx: ApplicationContext):
 
 @slash("Statistiques de l'épreuve")
 async def stats(ctx: ApplicationContext):
-    if ctx.channel.id != cfg.channels.DEBRIEF:
+    if ctx.channel.id != cfg.CHANNEL_DEBRIEF:
         await ctx.respond("Cette commande doit être lancée dans #debrief-epreuve", ephemeral=True)
         return
 
@@ -195,4 +197,10 @@ def _extract_id_from_name(display_name: str):
     return match.group(1) if match else None
 
 if __name__ == "__main__":
+    admin_thread = threading.Thread(
+        target=admin_app.run,
+        kwargs={"host": "127.0.0.1", "port": 5000, "debug": False, "use_reloader": False},
+        daemon=True,
+    )
+    admin_thread.start()
     bot.run(os.environ["TOKEN_FIOI"].rstrip('\n'))

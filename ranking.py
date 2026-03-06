@@ -29,7 +29,7 @@ class Ranking:
 
     async def _create_ranking_embed(self, sorted_scores):
         """Creates a Discord embed containing the formatted ranking."""
-        embed = discord.Embed(title=f"Classement {cfg.contest.NOM_EPREUVE}")
+        embed = discord.Embed(title=f"Classement {cfg.NOM_EPREUVE}")
         contents = await self._generate_ranking_contents(sorted_scores)
         
         for content in contents:

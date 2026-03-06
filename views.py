@@ -24,12 +24,12 @@ class ConfirmView(discord.ui.View):
 class ScoreModal(discord.ui.Modal):
     """Modal for submitting scores"""
     def __init__(self, bot, *args, **kwargs):
-        super().__init__(title=f"Score détaillé ({cfg.contest.ABC})", *args, **kwargs)
+        super().__init__(title=f"Score détaillé ({cfg.ABC})", *args, **kwargs)
         self.bot = bot
         
         score_input = discord.ui.InputText(
             label="Scores",
-            placeholder=f"Exemple : {cfg.contest.EXEMPLE}"
+            placeholder=f"Exemple : {cfg.EXEMPLE}"
         )
         self.add_item(score_input)
 
@@ -37,7 +37,7 @@ class ScoreModal(discord.ui.Modal):
         score = self.children[0].value
         if not self._validate_score(score):
             await interaction.response.send_message(
-                f"Format incorrect. Exemple : {cfg.contest.EXEMPLE}", 
+                f"Format incorrect. Exemple : {cfg.EXEMPLE}", 
                 ephemeral=True
             )
             return
@@ -48,7 +48,7 @@ class ScoreModal(discord.ui.Modal):
     def _validate_score(self, score: str) -> bool:
         try:
             scores = list(map(int, score.replace(" ", "").split("+")))
-            return (len(scores) == cfg.contest.NB_PROBLEMS and 
+            return (len(scores) == cfg.NB_PROBLEMS and 
                    all(0 <= x <= 100 for x in scores))
         except Exception:
             return False
