@@ -1,9 +1,14 @@
+import os
+
+from dotenv import load_dotenv
 from flask import Flask, flash, get_flashed_messages, redirect, render_template_string, request, url_for
 
 from config import cfg
 
+load_dotenv()
+
 app = Flask(__name__)
-app.secret_key = "dev-admin-secret-key"
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 
 PAGE_TEMPLATE = """
 <!doctype html>
