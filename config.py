@@ -21,9 +21,9 @@ KEY_DESCRIPTIONS = {
 
 class ConfigStore:
     def __init__(self, file_path: Path):
-        object.__setattr__(self, "_lock", RLock())
-        object.__setattr__(self, "_file_path", file_path)
-        object.__setattr__(self, "_data", self._load())
+        self._lock = RLock()
+        self._file_path = file_path
+        self._data = self._load()
 
     def _load(self) -> dict:
         if not self._file_path.exists():
@@ -51,31 +51,27 @@ class ConfigStore:
 
         os.replace(tmp_path, self._file_path)
 
-    def __getattr__(self, key: str):
+    def get(self, key: str):
         with self._lock:
-            if key == "ABC":
-                nb = self._data["NB_PROBLEMS"]
-                if not isinstance(nb, int) or nb <= 0:
-                    raise ValueError("NB_PROBLEMS must be a positive integer.")
-                return "+".join(chr(ord("A") + i) for i in range(nb))
-            if key == "EXEMPLE":
-                nb = self._data["NB_PROBLEMS"]
-                if not isinstance(nb, int) or nb <= 0:
-                    raise ValueError("NB_PROBLEMS must be a positive integer.")
-                return "+".join(str(max(0, 100 - 10 * i)) for i in range(nb))
             if key not in self._data:
-                raise AttributeError(f"Missing config key: {key}")
+                raise KeyError(f"Missing config key: {key}")
             return self._data[key]
-
-    def __setattr__(self, key: str, value):
-        if key.startswith("_"):
-            object.__setattr__(self, key, value)
-            return
-        raise AttributeError("Config is read-only via attributes. Use save_all(dict).")
 
     def as_dict(self) -> dict:
         with self._lock:
             return dict(self._data)
+
+    def abc(self) -> str:
+        nb = self.get("NB_PROBLEMS")
+        if not isinstance(nb, int) or nb <= 0:
+            raise ValueError("NB_PROBLEMS must be a positive integer.")
+        return "+".join(chr(ord("A") + i) for i in range(nb))
+
+    def exemple(self) -> str:
+        nb = self.get("NB_PROBLEMS")
+        if not isinstance(nb, int) or nb <= 0:
+            raise ValueError("NB_PROBLEMS must be a positive integer.")
+        return "+".join(str(max(0, 100 - 10 * i)) for i in range(nb))
 
     def descriptions(self) -> dict:
         return dict(KEY_DESCRIPTIONS)

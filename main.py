@@ -26,18 +26,18 @@ class FioiBot(discord.Bot):
         self.ranking = Ranking(self)
 
     async def setup_bot_context(self):
-        self.guild_fioi = await self.fetch_guild(cfg.GUILD_ID)
+        self.guild_fioi = await self.fetch_guild(cfg.get("GUILD_ID"))
         await self._setup_roles()
         await self._setup_channels()
 
     async def _setup_roles(self):
-        self.role_debrief = self.guild_fioi.get_role(cfg.ROLE_DEBRIEF)
-        self.role_ranking = self.guild_fioi.get_role(cfg.ROLE_RANKING)
-        self.role_participant = self.guild_fioi.get_role(cfg.ROLE_PARTICIPANT)
-        self.role_finale = self.guild_fioi.get_role(cfg.ROLE_FINALE)
+        self.role_debrief = self.guild_fioi.get_role(cfg.get("ROLE_DEBRIEF"))
+        self.role_ranking = self.guild_fioi.get_role(cfg.get("ROLE_RANKING"))
+        self.role_participant = self.guild_fioi.get_role(cfg.get("ROLE_PARTICIPANT"))
+        self.role_finale = self.guild_fioi.get_role(cfg.get("ROLE_FINALE"))
 
     async def _setup_channels(self):
-        self.salon_classement = await self.guild_fioi.fetch_channel(cfg.CHANNEL_RANKING)
+        self.salon_classement = await self.guild_fioi.fetch_channel(cfg.get("CHANNEL_RANKING"))
         assert self.salon_classement is not None
 
     async def on_ready(self):
@@ -52,12 +52,13 @@ class FioiBot(discord.Bot):
 bot = FioiBot()
 
 def slash(desc):
-    return bot.slash_command(guild_ids=[cfg.GUILD_ID], description=desc)
+    return bot.slash_command(guild_ids=[cfg.get("GUILD_ID")], description=desc)
 
 @slash("J'ai fini l'épreuve")
 async def debrief(ctx: ApplicationContext):
-    if cfg.LOCK_MSG:
-        await ctx.respond(cfg.LOCK_MSG, ephemeral=True)
+    lock_msg = cfg.get("LOCK_MSG")
+    if lock_msg:
+        await ctx.respond(lock_msg, ephemeral=True)
         return
 
     if bot.role_debrief in ctx.author.roles:
@@ -66,7 +67,7 @@ async def debrief(ctx: ApplicationContext):
 
     view = ConfirmView(ctx.author)
     await ctx.respond(
-        cfg.MESSAGE_CONFIRMATION.format(user_mention=ctx.author.mention),
+        cfg.get("MESSAGE_CONFIRMATION").format(user_mention=ctx.author.mention),
         view=view
     )
     
@@ -94,7 +95,7 @@ async def liverank(ctx: ApplicationContext):
 
 @slash("Statistiques de l'épreuve")
 async def stats(ctx: ApplicationContext):
-    if ctx.channel.id != cfg.CHANNEL_DEBRIEF:
+    if ctx.channel.id != cfg.get("CHANNEL_DEBRIEF"):
         await ctx.respond("Cette commande doit être lancée dans #debrief-epreuve", ephemeral=True)
         return
 
