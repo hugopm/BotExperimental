@@ -32,6 +32,7 @@ class FioiBot(discord.Bot):
 
     async def _setup_roles(self):
         self.role_debrief = self.guild_fioi.get_role(cfg.get("ROLE_DEBRIEF"))
+        self.role_entraineur = self.guild_fioi.get_role(cfg.get("ROLE_ENTRAINEUR"))
         self.role_ranking = self.guild_fioi.get_role(cfg.get("ROLE_RANKING"))
         self.role_participant = self.guild_fioi.get_role(cfg.get("ROLE_PARTICIPANT"))
         self.role_finale = self.guild_fioi.get_role(cfg.get("ROLE_FINALE"))
@@ -147,14 +148,14 @@ async def password(ctx: ApplicationContext):
 
 @slash("debug")
 async def debug(ctx : ApplicationContext):
-    isOk = await bot.is_owner(ctx.author)
+    isOk = bot.role_entraineur in ctx.author.roles
     if isOk:
         await bot.ranking.update()
     await ctx.respond("Ok" if isOk else "Interdit", ephemeral=True)
 
 @slash("Supprimer les scores et les rôles")
 async def clear(ctx: ApplicationContext):
-    if not await bot.is_owner(ctx.author):
+    if not bot.role_entraineur in ctx.author.roles:
         await ctx.respond("Interdit.", ephemeral=True)
         return
         
