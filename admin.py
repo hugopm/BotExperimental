@@ -9,6 +9,19 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ["FLASK_SECRET_KEY"]
+FLASK_BASE_URL = os.environ["FLASK_BASE_URL"].strip()
+
+if not FLASK_BASE_URL.startswith("/"):
+    FLASK_BASE_URL = f"/{FLASK_BASE_URL}"
+FLASK_BASE_URL = FLASK_BASE_URL.rstrip("/")
+
+
+def with_base_url(path: str) -> str:
+    if not path.startswith("/"):
+        path = f"/{path}"
+    if path == FLASK_BASE_URL or path.startswith(f"{FLASK_BASE_URL}/"):
+        return path
+    return f"{FLASK_BASE_URL}{path}"
 
 PAGE_TEMPLATE = """
 <!doctype html>
@@ -89,7 +102,7 @@ def index():
                 new_data[key] = _parse_value(raw_value, old_value)
             cfg.save_all(new_data)
             flash("Configuration sauvegardee.", "ok")
-            return redirect(url_for("index"))
+            return redirect(with_base_url(url_for("index")))
         except Exception as exc:
             flash(f"Erreur de sauvegarde: {exc}", "err")
             data = new_data or data
