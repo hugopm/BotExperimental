@@ -87,7 +87,7 @@ def _parse_value(raw_value: str, previous_value):
     return raw_value
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route(with_base_url("/"), methods=["GET", "POST"])
 def index():
     data = cfg.as_dict()
     descriptions = cfg.descriptions()

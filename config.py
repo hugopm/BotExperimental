@@ -25,6 +25,7 @@ class ConfigStore:
         self._lock = RLock()
         self._file_path = file_path
         self._data = self._load()
+        self._validate_payload_keys(self._data)
 
     def _load(self) -> dict:
         if not self._file_path.exists():
@@ -51,6 +52,16 @@ class ConfigStore:
             tmp_path = Path(tmp.name)
 
         os.replace(tmp_path, self._file_path)
+
+    def _validate_payload_keys(self, data: dict):
+        required_keys = set(KEY_DESCRIPTIONS.keys())
+        provided_keys = set(data.keys())
+        missing = sorted(required_keys - provided_keys)
+        extra = sorted(provided_keys - required_keys)
+        if missing:
+            raise KeyError(f"Missing required config key(s): {missing}")
+        if extra:
+            raise KeyError(f"Unknown config key(s): {extra}")
 
     def get(self, key: str):
         with self._lock:
@@ -80,15 +91,7 @@ class ConfigStore:
     def save_all(self, data: dict):
         if not isinstance(data, dict):
             raise ValueError("Config payload must be a dict.")
-
-        expected = set(self._data.keys())
-        provided = set(data.keys())
-        missing = expected - provided
-        extra = provided - expected
-        if missing:
-            raise KeyError(f"Missing keys in payload: {sorted(missing)}")
-        if extra:
-            raise KeyError(f"Unknown keys in payload: {sorted(extra)}")
+        self._validate_payload_keys(data)
 
         with self._lock:
             self._data = dict(data)
