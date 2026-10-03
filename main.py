@@ -66,6 +66,12 @@ async def debrief(ctx: ApplicationContext):
         await ctx.respond(f"Vous avez déjà le rôle {bot.role_debrief.name}")
         return
 
+    if not _extract_id_from_name(ctx.author.display_name):
+        await ctx.respond(
+            "Vous devez vous renommer sur le serveur en 'Prénom (pseudo France-IOI)' pour utiliser cette commande."
+        )
+        return
+
     view = ConfirmView(ctx.author)
     await ctx.respond(
         cfg.get("MESSAGE_CONFIRMATION").format(user_mention=ctx.author.mention),
