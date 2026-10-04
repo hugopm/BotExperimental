@@ -200,7 +200,7 @@ def _extract_id_from_name(display_name: str):
     >>> _extract_id_from_name("Multiple (id1) (id2)")
     >>> _extract_id_from_name("(ordre) Important")
     """
-    pattern = r'^[^(]+\(([a-zA-Z0-9_]+)\)$'
+    pattern = r'^[^(]+\(([a-zA-Z0-9_-]+)\)$'
     match = re.match(pattern, display_name.strip())
     return match.group(1) if match else None
 
